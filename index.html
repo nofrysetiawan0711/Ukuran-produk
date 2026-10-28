@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f2a43"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Ukuran Produk"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png"><title>Pengukur Produk untuk AI Fashion</title>
+<style>
+:root{--bg:#eef1f5;--fg:#0f2a43;--mut:#5d6f82;--card:#fff;--ln:#cdd6e0;--tape:#f5c518;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1520;--fg:#e6edf5;--mut:#9aabbd;--card:#152232;--ln:#2a3b4f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1520;--fg:#e6edf5;--mut:#9aabbd;--card:#152232;--ln:#2a3b4f;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:23px;margin:0 0 4px;letter-spacing:-.01em}
+.lead{color:var(--mut);margin:0 0 16px}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.tabs button{padding:8px 2px;border:1.5px solid var(--ln);background:var(--card);color:var(--fg);border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button[aria-selected=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+label.t{display:block;font-weight:600;margin-bottom:12px}
+input{font:inherit;color:var(--fg);background:var(--card);border:1.5px solid var(--ln);border-radius:10px;padding:10px 12px;width:100%}
+label.t input{margin-top:4px;font-weight:400}
+input:focus-visible,button:focus-visible{outline:3px solid var(--tape);outline-offset:1px}
+.dia{background:#fff;background-image:linear-gradient(#e7edf3 1px,transparent 1px),linear-gradient(90deg,#e7edf3 1px,transparent 1px);background-size:20px 20px;border:1.5px solid var(--ln);border-radius:12px;margin-bottom:6px}
+.dia svg{display:block;width:100%;height:auto}
+.row{display:grid;grid-template-columns:30px 1fr 104px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--ln)}
+.k{background:var(--tape);color:#0f2a43;border-radius:6px;text-align:center;font-weight:800;padding:4px 0}
+.row label{font-weight:600}
+.row small{display:block;color:var(--mut);font-size:12.5px;font-weight:400}
+.u{position:relative}.u input{padding-right:38px}
+.u i{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-style:normal;pointer-events:none}
+.cat{margin-top:14px}
+#dl{width:100%;margin-top:6px;padding:14px;border:0;border-radius:12px;background:var(--tape);color:#0f2a43;font:inherit;font-weight:800;font-size:16px;cursor:pointer}
+#msg{min-height:22px;color:var(--mut);margin:10px 0 0}
+#pv{width:100%;border-radius:10px;border:1.5px solid var(--ln);margin-top:8px}
+</style></head><body>
+<main>
+<h1>Ukuran asli produk</h1>
+<p class="lead">Isi hasil ukur produk Anda, lalu unduh gambarnya untuk dipakai sebagai referensi proporsi saat generate model virtual. Ukur dalam keadaan datar di atas meja, tanpa menarik kain.</p>
+<div id="tabs" class="tabs" role="tablist"></div>
+<label class="t">Nama produk atau SKU<input id="nama" maxlength="60" placeholder="mis. Kardigan rajut oversize krem"></label>
+<div class="dia" id="dia"></div>
+<div id="fields"></div>
+<label class="t cat">Catatan (bahan, potongan, stretch)<input id="cat" maxlength="140" placeholder="mis. oversize, rajut tebal, sedikit stretch"></label>
+<button id="dl" type="button">Unduh gambar ukuran (PNG)</button>
+<p id="msg" role="status"></p>
+<img id="pv" alt="Pratinjau gambar ukuran" hidden>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=t=>{$('#msg').textContent=t};
+const OL='fill="#f8fafc" stroke="#0f2a43" stroke-width="2" stroke-linejoin="round"';
+const AR='<defs><marker id="ar" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#d9480f"/></marker></defs>';
+const gm=(z)=>`<path d="M110 52L135 44Q160 70 185 44L210 52L278 100L254 140L226 120L226 258L94 258L94 120L66 140L42 100Z" ${OL}/><path d="M110 30V52M210 30V52" stroke="#94a3b8" stroke-dasharray="3 3"/>${z}`;
+const tf=(b)=>[['A','Lebar Dada','ketiak ke ketiak, diukur datar',[94,120,226,120]],['B',b,'dari pangkal leher di bahu ke ujung bawah',[130,46,130,258]],['C','Lebar Bahu','ujung bahu kiri ke kanan',[110,30,210,30]],['D','Panjang Lengan','dari ujung bahu ke ujung lengan',[210,52,266,120]],['E','Lebar Bawah','bagian bawah (hem), diukur datar',[94,244,226,244]],['F','Lebar Manset','ujung lengan, diukur datar',[278,100,254,140],[22,22]]];
+const P={
+baju:{n:'Baju',i:'👕',b:gm(''),f:tf('Panjang Baju')},
+celana:{n:'Celana',i:'👖',b:`<path d="M100 30L220 30L228 90L216 292L166 292L160 130L154 292L104 292L92 90Z" ${OL}/><path d="M100 46H220M160 130V46" stroke="#94a3b8" fill="none"/>`,f:[['A','Lebar Pinggang','bagian atas ikat pinggang, diukur datar',[100,38,220,38]],['B','Lebar Pinggul','titik terlebar pinggul, diukur datar',[92,92,228,92]],['C','Panjang Celana','dari pinggang ke ujung kaki',[84,30,84,292],[-34,0]],['D','Panjang Dalam','dari selangkangan ke ujung kaki',[163,132,168,290]],['E','Lebar Paha','2–3 cm di bawah selangkangan',[160,142,225,142]],['F','Lebar Ujung Kaki','bukaan bawah celana, diukur datar',[166,292,216,292],[0,17]]]},
+jaket:{n:'Jaket',i:'🧥',b:gm('<path d="M160 68V258M108 196h26M186 196h26" stroke="#0f2a43" stroke-width="1.5" fill="none"/>'),f:tf('Panjang Jaket')},
+sepatu:{n:'Sepatu',i:'👟',b:`<path d="M60 252L60 120Q60 104 76 104L132 104Q140 150 180 160L270 176Q304 184 304 214L304 252Z" ${OL}/><rect x="56" y="230" width="252" height="26" rx="6" fill="#dbe4ee" stroke="#0f2a43" stroke-width="2"/><ellipse cx="250" cy="52" rx="56" ry="26" ${OL}/><text x="250" y="94" text-anchor="middle" font-size="9" fill="#64748b">tampak atas</text>`,f:[['A','Panjang Sol','dari tumit ke ujung depan sepatu',[60,272,304,272]],['B','Tinggi Sepatu','dari alas ke bibir atas sepatu',[96,104,96,256]],['C','Tinggi Sol atau Hak','tebal sol di bagian tumit',[44,230,44,256],[-8,-27]],['D','Lebar Telapak','titik terlebar telapak (tampak atas)',[268,28,268,76]]]}
+};
+const S={baju:{},celana:{},jaket:{},sepatu:{}};let cur='baju';
+function dia(p){
+  const d=P[p],v=S[p];let s=AR+d.b,t='';
+  d.f.forEach(([k,,,[a,b,c,e],o=[0,0]])=>{
+    s+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${e}" stroke="#d9480f" stroke-width="1.6" marker-start="url(#ar)" marker-end="url(#ar)"/>`;
+    const x=(a+c)/2+o[0],y=(b+e)/2+o[1],l=k+(v[k]?' '+v[k]:''),w=l.length*7+14;
+    t+=`<rect x="${x-w/2}" y="${y-9}" width="${w}" height="18" rx="9" fill="#fff" stroke="#d9480f"/><text x="${x}" y="${y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f2a43">${esc(l)}</text>`;
+  });
+  return s+t+'<text x="332" y="314" text-anchor="end" font-size="9" fill="#64748b">satuan: cm</text>';
+}
+const draw=()=>{$('#dia').innerHTML='<svg viewBox="0 0 340 320" role="img" aria-label="Diagram titik ukur '+P[cur].n+'" font-family="Arial,Helvetica,sans-serif">'+dia(cur)+'</svg>'};
+function tab(p){
+  cur=p;
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.p===p));
+  $('#fields').innerHTML=P[p].f.map(([k,l,h])=>`<div class="row"><b class="k">${k}</b><label for="i${k}">${l}<small>${h}</small></label><span class="u"><input id="i${k}" data-k="${k}" type="number" inputmode="decimal" step="0.1" min="0" value="${esc(S[p][k]||'')}"><i>cm</i></span></div>`).join('');
+  $('#nama').value=S[p].nama||'';$('#cat').value=S[p].cat||'';
+  $('#pv').hidden=true;msg('');draw();
+}
+function build(){
+  const d=P[cur],v=S[cur],rows=d.f.filter(f=>v[f[0]]);
+  if(!rows.length)return null;
+  const W=340,Y=380,note=((v.cat||'').match(/.{1,46}/g)||[]).slice(0,3);
+  const y2=Y+38+rows.length*24+6,nb=note.length?16+note.length*15:0,H=y2+nb+34;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Arial,Helvetica,sans-serif"><rect width="${W}" height="${H}" fill="#fff"/><text x="16" y="28" font-size="17" font-weight="700" fill="#0f2a43">${esc(v.nama||d.n)}</text><text x="16" y="47" font-size="11" fill="#64748b">Referensi ukuran asli produk: ${d.n}</text><g transform="translate(0,54)">${dia(cur)}</g><text x="16" y="${Y+14}" font-size="12" font-weight="700" fill="#0f2a43">Daftar ukuran (cm)</text>`;
+  rows.forEach(([k,l],i)=>{const y=Y+38+i*24;s+=`<path d="M16 ${y+8}H324" stroke="#e2e8f0"/><text x="16" y="${y}" font-size="12" font-weight="700" fill="#d9480f">${k}</text><text x="38" y="${y}" font-size="12" fill="#0f2a43">${l}</text><text x="324" y="${y}" text-anchor="end" font-size="12" font-weight="700" fill="#0f2a43">${esc(v[k])} cm</text>`});
+  if(note.length){s+=`<text x="16" y="${y2+8}" font-size="11" font-weight="700" fill="#0f2a43">Catatan</text>`;note.forEach((t,j)=>{s+=`<text x="16" y="${y2+24+j*15}" font-size="11" fill="#334155">${esc(t)}</text>`})}
+  s+=`<text x="16" y="${H-12}" font-size="9" fill="#64748b">Pertahankan proporsi ukuran ini pada model virtual.</text></svg>`;
+  return{s,W,H};
+}
+function unduh(){
+  const r=build();
+  if(!r){msg('Isi minimal satu ukuran dulu.');return}
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');c.width=r.W*4;c.height=r.H*4;
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+    $('#pv').src=c.toDataURL('image/png');$('#pv').hidden=false;
+    c.toBlob(async b=>{
+      const nm=(S[cur].nama||'').trim().replace(/[^\w\- ]+/g,'').replace(/\s+/g,'-').toLowerCase();
+      const fn='ukuran-'+cur+(nm?'-'+nm:'')+'.png';
+      try{
+        const f=new File([b],fn,{type:'image/png'});
+        if(matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fn});msg('Pilih Simpan Gambar atau Simpan ke File.');return}
+      }catch(e){if(e&&e.name==='AbortError'){msg('Dibatalkan.');return}}
+      const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=fn;document.body.appendChild(a);a.click();a.remove();
+      msg('Jika belum tersimpan, tekan lama gambar di bawah lalu simpan.');
+    },'image/png');
+  };
+  img.onerror=()=>msg('Gagal membuat gambar. Coba lagi.');
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(r.s);
+}
+$('#tabs').innerHTML=Object.entries(P).map(([k,d])=>`<button type="button" role="tab" data-p="${k}"><span style="display:block;font-size:20px">${d.i}</span>${d.n}</button>`).join('');
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b)tab(b.dataset.p)};
+$('#fields').oninput=e=>{const k=e.target.dataset.k;if(k){S[cur][k]=e.target.value;draw()}};
+$('#nama').oninput=e=>{S[cur].nama=e.target.value};
+$('#cat').oninput=e=>{S[cur].cat=e.target.value};
+$('#dl').onclick=unduh;
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+tab('baju');
+</script>
+</body></html>
